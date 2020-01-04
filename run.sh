@@ -2,7 +2,7 @@
 
 run()
 {
-  validator_key=12F27wGzDHAyGJLEVFFFi7JL1NWQpSFs87pjGkzaHFKS4Ujj3q8
+  validator_key=12Yi1mSamr29kgVnMQ7uTWxf1PMq1DHAC97LtJG1xkkmYWSKTHb
   bootnode="mainnet-bootnode.incognito.org:9330"
   is_shipping_logs=0
   latest_tag="$1"
@@ -34,16 +34,11 @@ run()
     balena image rm -f incognitochain/incognito-mainnet-arm:${current_tag}
   fi
 
-  #pull armv8 version of geth-client
-  balena pull ffaerber/go-ethereum
-  #pull incognito arm version
   balena pull incognitochain/incognito-mainnet-arm:arm64_20191210_1
   balena network create --driver bridge inc_net || true
 
   #balena run -ti --emulate --restart=always --net inc_net -d -p 8545:8545  -p 30303:30303 -p 30303:30303/udp -v $PWD/${eth_data_dir}:/home/parity/.local/share/io.parity.ethereum/ --name eth_mainnet  parity/parity:stable --light --jsonrpc-interface all --jsonrpc-hosts all  --jsonrpc-apis all --mode last --base-path=/home/parity/.local/share/io.parity.ethereum/
-  balena run -d $node_port:$node_port -p $rpc_port:$rpc_port -v /usr/src/eth-mainnet-data:/root/.ethereum ffaerber/go-ethereum
-  cid=$(balena ps -laq) 
-  balena exec -d $cid geth -syncmode light -rpc -rpcaddr 0.0.0.0
+  balena run -d --net inc_net -p 8545:8545 -p 30303:30303 killinterpol/geth-multiarch --syncmode light --rpc --rpcaddr 0.0.0.0
   balena run --restart=always --net inc_net -p $node_port:$node_port -p $rpc_port:$rpc_port -e NODE_PORT=$node_port -e RPC_PORT=$rpc_port -e BOOTNODE_IP=$bootnode -e GETH_NAME=eth_mainnet -e MININGKEY=${validator_key} -e TESTNET=false -v $PWD/${data_dir}:/data -d --name inc_mainnet incognitochain/incognito-mainnet-arm:arm64_20191210_1
 
   if [ $is_shipping_logs -eq 1 ]
